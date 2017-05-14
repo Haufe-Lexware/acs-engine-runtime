@@ -1,0 +1,54 @@
+# ACS Runtime Docker image
+
+This little repository helps in creating a runtime docker image for the [acs-engine](https://github.com/Azure/acs-engine) command line tool, which is used for creating Azure Resource Manager configuration files and parameter files for creating various container orchestration system deployments.
+
+The acs-engine repository itself contains excellent scripting for setting up a development environment, but it does not provide an easy way of leveraging `acs-engine` in an automated way. This is where this repository comes in: It enables you to create a minimal docker image which is able to run `acs-engine`, which is suitable to use e.g. from build pipelines.
+
+## What does this do?
+
+The `build-runtim.sh` scripts does the following things:
+
+* Clone `acs-engine` into the current path, with a configurable source; if the path is present, do a `git pull`
+* Invoke `./scripts/devenv.sh` and automatically call `make build` to build the `acs-engine` executable
+* Build a minimal docker image which can be used to just run `acs-engine`
+
+## Usage
+
+### Building the runtime image
+
+Set the following environment variables:
+
+Name | Default | Description
+-----|---------|--------------
+`ACS_ENGINE_REPO` | `https://github.com/Azure/acs-engine` | The source repository for the `acs-engine` repository. If you do not specify this, the `HEAD` of the original repository will be used. Override if you have your own fork, or if you want to specify exactly when you want to pull in changes from upstream into your own fork of `acs-engine`
+`ACS_RUNTIME_IMAGE` | -- | The name of the runtime image you want to create; e.g. `registry.yourcompany.io/azure/acs-engine:latest`
+
+Then call the script
+
+```
+$ ./build-runtime.sh
+```
+
+Please note that the script does not (yet) push the image to any repository. To do this, do an additional
+
+```
+$ docker push $ACS_RUNTIME_IMAGE
+```
+
+Now you're set and done to use the runtime image in your build pipelines.
+
+### Using the runtime image
+
+Inside your build pipeline, you can invoke the runtime image like this. It's assumed that the configuration JSON file (the API model) is called `model.json`, and that you want your output in the directory `output`:
+
+```
+docker run --rm -v `pwd`:/model <image name> generate --api-model /model/model.json --output-directory /model/output
+```
+
+Note that we mount the current directory (`pwd`) into the runtime container as `/model`, which is why we need to specify the source of the `--api-model` as `/model/model.json`, and likewise with the output directory.
+
+In case you are running on Linux, it may happen that the generated files belong to `root`, and need to be `chown`:ed, but that's left as an exercise ;-)
+
+# LICENSE
+
+[Apache-2.0](LICENSE)
