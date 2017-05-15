@@ -15,6 +15,11 @@ function traperror() {
    exit 1
 }
 
+if [ -f "./env.sh" ]; then
+  echo "INFO: Found env.sh in current directory, sourcing into script."
+  source ./env.sh
+fi
+
 if [ -z "${ACS_RUNTIME_IMAGE}" ]; then
   echo "ERROR: Target image name must be specified in env var ACS_RUNTIME_IMAGE prior"
   echo "starting this script."
@@ -35,6 +40,10 @@ if [ -z "${DOCKER_TAGS}" ]; then
   export DOCKER_TAGS="latest"
 fi
 
+for tag in ${DOCKER_TAGS}; do
+  echo "INFO: Preparing to push tag ${tag}"
+done
+
 if [ -z "${ACS_ENGINE_REPO}" ]; then
   export ACS_ENGINE_REPO=https://github.com/Azure/acs-engine
   echo "WARNING: Env var ACS_ENGINE_REPO is not set, assuming ${ACS_ENGINE_REPO}"
@@ -51,7 +60,7 @@ fi
 pushd acs-engine
 
 # script behaves differently on Linux and macOS...
-if [ "Darwin" = $(uname) ]; then 
+if [ "Darwin" = "$(uname)" ]; then 
   script -q /dev/null ./scripts/devenv.sh << EOF
 make build
 exit
@@ -77,9 +86,7 @@ for tag in ${DOCKER_TAGS}; do
 done
 popd
 
-if [ -z "${DOCKER_REGISTRY_USER}" ] || [ -z "${DOCKER_REGISTRY_PASSWORD}" ]; then
-  echo "INFO: Not pushing image, env vars DOCKER_REGISTRY_USER or DOCKER_REGISTRY_PASSWORD not set."
-else
+if [ ! -z "${DOCKER_REGISTRY_USER}" ] && [ ! -z "${DOCKER_REGISTRY_PASSWORD}" ]; then
   echo "INFO: Logging in to registry ${DOCKER_REGISTRY}..."
   if [ -z "${DOCKER_REGISTRY}" ]; then
     echo "INFO: Env var DOCKER_REGISTRY not set, assuming docker hub."
@@ -89,9 +96,11 @@ else
   fi
 
   for tag in ${DOCKER_TAGS}; do
-    echo "INFO: Pushing image ${ACS_RUNTIME_IMAGE}."
+    echo "INFO: Pushing image ${ACS_RUNTIME_IMAGE}:${tag}"
     docker push ${ACS_RUNTIME_IMAGE}:${tag}
   done
+else
+  echo "INFO: Not pushing image, env vars DOCKER_REGISTRY_USER or DOCKER_REGISTRY_PASSWORD not set."
 fi
 
 echo "INFO: Untagging random image name ${randomId}"

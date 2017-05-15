@@ -51,6 +51,24 @@ Note that we mount the current directory (`pwd`) into the runtime container as `
 
 In case you are running on Linux, it may happen that the generated files belong to `root`, and need to be `chown`:ed, but that's left as an exercise ;-)
 
+## Setting the environment variables
+
+Usually, a build pipeline, e.g. using Jenkins or GoCD, should set the environment variables prior to calling the `build-runtime.sh` script. If you want to test the functionality locally, create a file called `env.sh` in the root of this (cloned) repository, looking like this:
+
+```bash
+#!/bin/bash
+
+export ACS_ENGINE_REPO=https://github.com/Azure/acs-engine
+#export DOCKER_REGISTRY=yourcompany.azurecr.io
+export DOCKER_REGISTRY_USER=your_user
+export DOCKER_REGISTRY_PASSWORD=your_password
+
+export ACS_RUNTIME_IMAGE=yourcompany/acs-engine
+export DOCKER_TAGS="$(date +%Y%m%d%H%M%S) latest"
+```
+
+Obviously you need to adapt you your own needs, e.g. set the correct Azure registry (or leave blank for Docker Hub), the correct credentials and the desired runtime image name. The `DOCKER_TAGS` env var will make the script create two tags for the image, one with a current time stamp, and one for latest. This also can be adapted to your liking.
+
 # LICENSE
 
 [Apache-2.0](LICENSE)
