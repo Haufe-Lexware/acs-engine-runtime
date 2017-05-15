@@ -6,7 +6,7 @@ The acs-engine repository itself contains excellent scripting for setting up a d
 
 ## What does this do?
 
-The `build-runtim.sh` scripts does the following things:
+The `build-runtime.sh` scripts does the following things:
 
 * Clone `acs-engine` into the current path, with a configurable source; if the path is present, do a `git pull`
 * Invoke `./scripts/devenv.sh` and automatically call `make build` to build the `acs-engine` executable
