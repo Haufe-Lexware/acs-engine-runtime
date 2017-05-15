@@ -1,4 +1,4 @@
-# ACS Runtime Docker image
+# acs-engine Runtime Docker image
 
 This little repository helps in creating a runtime docker image for the [acs-engine](https://github.com/Azure/acs-engine) command line tool, which is used for creating Azure Resource Manager configuration files and parameter files for creating various container orchestration system deployments.
 
