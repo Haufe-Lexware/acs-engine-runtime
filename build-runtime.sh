@@ -2,6 +2,8 @@
 
 set -e
 
+pushd $(dirname $0)
+
 trap traperror ERR
 
 function traperror() {
@@ -107,3 +109,5 @@ echo "INFO: Untagging random image name ${randomId}"
 docker rmi ${randomId}
 
 echo "INFO: Successfully finished."
+
+popd
