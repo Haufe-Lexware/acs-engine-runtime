@@ -60,31 +60,8 @@ else
 fi
 
 pushd acs-engine
-# debug
-ls -la
-
-done=""
-# script behaves differently on Linux and macOS...
-if [ "Darwin" = "$(uname)" ]; then
-  done="true"
-  script -q /dev/null ./scripts/devenv.sh << EOF
-make build
-exit
-EOF
-fi
-if [ "Linux" = "$(uname)" ]; then
-  done="true"
-  script --return -qc ./scripts/devenv.sh /dev/null << EOF
-make build
-exit
-EOF
-fi
-
-if [ -z "${done}" ]; then
-  echo "ERROR: Unknown OS $(uname)."
-  exit 1
-fi
-
+  docker build -t acs-engine .
+  docker run -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
 popd
 
 if [ ! -f "./acs-engine/acs-engine" ]; then
