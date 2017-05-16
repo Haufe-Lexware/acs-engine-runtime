@@ -6,15 +6,14 @@ pushd $(dirname $0)
 
 trap traperror ERR
 
+randomId="dummy"
+
 function traperror() {
-   echo "ERROR: Something went wrong."
-   if [ -f ./docker_tag.tmp ]; then
-       echo "INFO: Remving temporary image."
-       if ! docker rmi $(cat ./docker_tag.tmp); then
-           echo "ERROR: Could not delete image."
-       fi
-   fi
-   exit 1
+  echo "ERROR: Something went wrong."
+  if ! docker rmi ${randomId}; then
+      echo "ERROR: Could not delete image."
+  fi
+  exit 1
 }
 
 if [ -f "./env.sh" ]; then
@@ -60,8 +59,10 @@ else
 fi
 
 pushd acs-engine
-  docker build -t acs-engine .
-  docker run -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
+docker build -t acs-engine .
+#docker run -u$(id -u):$(id -g) -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
+docker run -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
+chown -R "$(id -u):$(id -g)" .
 popd
 
 if [ ! -f "./acs-engine/acs-engine" ]; then
