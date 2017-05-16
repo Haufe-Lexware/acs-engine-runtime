@@ -70,7 +70,7 @@ make build
 exit
 EOF
 fi
-if [ "Linux" = "$(uname) "]; then
+if [ "Linux" = "$(uname)" ]; then
   done="true"
   script --return -qc "./test.sh" /dev/null << EOF
 make build
