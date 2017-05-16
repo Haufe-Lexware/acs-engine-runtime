@@ -60,6 +60,8 @@ else
 fi
 
 pushd acs-engine
+# debug
+ls -la
 
 done=""
 # script behaves differently on Linux and macOS...
