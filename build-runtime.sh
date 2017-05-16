@@ -66,6 +66,7 @@ docker build -t acs-engine .
 #   -v `pwd`:/gopath/src/github.com/Azure/acs-engine \
 # 	-w /gopath/src/github.com/Azure/acs-engine \
 #   --rm acs-engine bash -c "make build && chown -R \"$(id -u):$(id -g)\" ."
+ls -la
 docker run -i \
   -v `pwd`:/gopath/src/github.com/Azure/acs-engine \
 	-w /gopath/src/github.com/Azure/acs-engine \
