@@ -59,10 +59,13 @@ else
 fi
 
 pushd acs-engine
+pwd
 docker build -t acs-engine .
 #docker run -u$(id -u):$(id -g) -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
-docker run -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
-chown -R "$(id -u):$(id -g)" .
+docker run -i \
+  -v `pwd`:/gopath/src/github.com/Azure/acs-engine \
+	-w /gopath/src/github.com/Azure/acs-engine \
+  --rm acs-engine bash -c "make build && chown -R \"$(id -u):$(id -g)\" ."
 popd
 
 if [ ! -f "./acs-engine/acs-engine" ]; then
