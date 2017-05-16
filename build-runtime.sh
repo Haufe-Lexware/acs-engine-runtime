@@ -61,7 +61,7 @@ fi
 
 pushd acs-engine
   docker build -t acs-engine .
-  docker run -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
+  docker run -i -v `pwd`:/gopath/src/github.com/Azure/acs-engine --rm acs-engine bash -c "make build"
 popd
 
 if [ ! -f "./acs-engine/acs-engine" ]; then
