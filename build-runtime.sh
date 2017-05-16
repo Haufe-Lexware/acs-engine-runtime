@@ -72,7 +72,7 @@ EOF
 fi
 if [ "Linux" = "$(uname)" ]; then
   done="true"
-  script --return -qc "./test.sh" /dev/null << EOF
+  script --return -qc ./scripts/devenv.sh /dev/null << EOF
 make build
 exit
 EOF
@@ -84,6 +84,11 @@ if [ -z "${done}" ]; then
 fi
 
 popd
+
+if [ ! -f "./acs-engine/acs-engine" ]; then
+  echo "ERROR: Artefact acs-engine/acs-engine was not built correctly. Exiting."
+  exit 1
+fi
 
 cp acs-engine/acs-engine docker
 
