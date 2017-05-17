@@ -62,6 +62,8 @@ if [ -z "${ACS_ENGINE_REPO}" ]; then
 fi
 
 build() {
+    target="$1"
+
     docker build -t acs-engine acs-engine
     builder=$(docker run -i -t -d acs-engine bash)
     echo "INFO: copy source code to build container"
@@ -69,7 +71,7 @@ build() {
     echo "INFO: build acs-engine"
     docker exec $builder make build
     echo "INFO: getting resulting artifact"
-    docker cp ${builder}:/gopath/src/github.com/Azure/acs-engine/acs-engine docker
+    docker cp ${builder}:/gopath/src/github.com/Azure/acs-engine/acs-engine "${target}"
 }
 
 if [ -d "./acs-engine" ]; then
@@ -81,12 +83,13 @@ else
 fi
 
 echo "INFO: building builder image"
-build -t acs-engine acs-engine
+docker build -t acs-engine acs-engine
 
 echo "INFO: Building acs-engine within builder image"
-build
-if [ ! -f "docker/acs-engine" ]; then
-  echo "ERROR: Artifact docker/acs-engine was not built correctly. Exiting."
+target="docker/acs-engine"
+build $target
+if [ ! -f "${target}" ]; then
+  echo "ERROR: Artifact ${target} was not built correctly. Exiting."
   exit 1
 fi
 
