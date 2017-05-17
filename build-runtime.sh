@@ -64,7 +64,6 @@ fi
 build() {
     target="$1"
 
-    docker build -t acs-engine acs-engine
     builder=$(docker run -i -t -d acs-engine bash)
     echo "INFO: copy source code to build container"
     docker cp acs-engine ${builder}:/gopath/src/github.com/Azure/
