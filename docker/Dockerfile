@@ -1,4 +1,4 @@
-FROM busybox:glibc
+FROM prom/busybox:glibc
 
 WORKDIR /app
 ADD . /app
