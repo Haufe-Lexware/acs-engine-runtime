@@ -1,20 +1,31 @@
 #!/bin/bash
-
 set -e
 
-pushd $(dirname $0)
-
-trap traperror ERR
-
-randomId="dummy"
-
-function traperror() {
-  echo "ERROR: Something went wrong."
-  if ! docker rmi ${randomId}; then
-      echo "ERROR: Could not delete image."
-  fi
-  exit 1
+cleanup() {
+    test -n "${builder}" &&\
+        echo "INFO: remove build container ${builder}" &&\
+        docker rm -f "${builder}"
+    test -n "${randomId}" &&\
+        echo "INFO: Untagging random image name ${randomId}" &&\
+        docker rmi "${randomId}"
 }
+
+trap cleanup 0
+
+error() {
+    local parent_lineno="$1"
+    local message="$2"
+    local code="${3:-1}"
+    if [[ -n "$message" ]] ; then
+        echo "ERROR on or near line ${parent_lineno}: ${message}; exiting with status ${code}"
+    else
+        echo "ERROR on or near line ${parent_lineno}; exiting with status ${code}"
+    fi
+    cleanup
+    exit "${code}"
+}
+
+trap "error ${LINENO}" ERR
 
 if [ -f "./env.sh" ]; then
   echo "INFO: Found env.sh in current directory, sourcing into script."
@@ -50,6 +61,17 @@ if [ -z "${ACS_ENGINE_REPO}" ]; then
   echo "WARNING: Env var ACS_ENGINE_REPO is not set, assuming ${ACS_ENGINE_REPO}"
 fi
 
+build() {
+    docker build -t acs-engine acs-engine
+    builder=$(docker run -i -t -d acs-engine bash)
+    echo "INFO: copy source code to build container"
+    docker cp acs-engine ${builder}:/gopath/src/github.com/Azure/
+    echo "INFO: build acs-engine"
+    docker exec $builder make build
+    echo "INFO: getting resulting artifact"
+    docker cp ${builder}:/gopath/src/github.com/Azure/acs-engine/acs-engine docker
+}
+
 if [ -d "./acs-engine" ]; then
   pushd acs-engine
   git pull
@@ -58,40 +80,25 @@ else
   git clone ${ACS_ENGINE_REPO}
 fi
 
-pushd acs-engine
-pwd
-docker build -t acs-engine .
-docker run -i \
-  --privileged \
-  -v `pwd`:/gopath/src/github.com/Azure/acs-engine \
-	-w /gopath/src/github.com/Azure/acs-engine \
-  --rm acs-engine bash -c "make build && chown -R \"$(id -u):$(id -g)\" ."
-# ls -la
-# docker run -i \
-#   --privileged \
-#   -v `pwd`:/gopath/src/github.com/Azure/acs-engine \
-# 	-w /gopath/src/github.com/Azure/acs-engine \
-#   --rm acs-engine bash -c "pwd && ls -la"
-popd
+echo "INFO: building builder image"
+build -t acs-engine acs-engine
 
-if [ ! -f "./acs-engine/acs-engine" ]; then
-  echo "ERROR: Artefact acs-engine/acs-engine was not built correctly. Exiting."
+echo "INFO: Building acs-engine within builder image"
+build
+if [ ! -f "docker/acs-engine" ]; then
+  echo "ERROR: Artifact docker/acs-engine was not built correctly. Exiting."
   exit 1
 fi
 
-cp acs-engine/acs-engine docker
-
 randomId=$(od -vN "16" -An -tx1 /dev/urandom | tr -d " \n")
 
-pushd docker
-docker build -t ${randomId} .
+docker build -t ${randomId} docker
 for tag in ${DOCKER_TAGS}; do
   echo "INFO: Tagging as ${ACS_RUNTIME_IMAGE}:${tag}."
   docker tag ${randomId} ${ACS_RUNTIME_IMAGE}:${tag}
 done
-popd
 
-if [ ! -z "${DOCKER_REGISTRY_USER}" ] && [ ! -z "${DOCKER_REGISTRY_PASSWORD}" ]; then
+if [ -n "${DOCKER_REGISTRY_USER}" ] && [ -n "${DOCKER_REGISTRY_PASSWORD}" ]; then
   echo "INFO: Logging in to registry ${DOCKER_REGISTRY}..."
   if [ -z "${DOCKER_REGISTRY}" ]; then
     echo "INFO: Env var DOCKER_REGISTRY not set, assuming docker hub."
@@ -108,9 +115,5 @@ else
   echo "INFO: Not pushing image, env vars DOCKER_REGISTRY_USER or DOCKER_REGISTRY_PASSWORD not set."
 fi
 
-echo "INFO: Untagging random image name ${randomId}"
-docker rmi ${randomId}
 
 echo "INFO: Successfully finished."
-
-popd
