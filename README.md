@@ -39,6 +39,8 @@ Note that you may specify multiple tags, space-delimited, in `DOCKER_TAGS`. If y
 
 Now you're set and done to use the runtime image in your build pipelines.
 
+**Side note**: The build process may look a little complicated, but the reason for explicitly copying the source code into the container is that this will also work if you are running your build agents inside docker, i.e. if you are leveraging the "lightweight" docker-in-docker approach which uses the host's docker engine instead of actually doing real "docker in docker". If you are re-using the host's docker daemon, you cannot use volume mappings, as you're actually mapping the **host** directory into the new container, and not the **container** directory.
+
 ### Using the runtime image
 
 Inside your build pipeline, you can invoke the runtime image like this. It's assumed that the configuration JSON file (the API model) is called `model.json`, and that you want your output in the directory `output`:
@@ -50,6 +52,29 @@ docker run --rm -v `pwd`:/model <image name> generate --api-model /model/model.j
 Note that we mount the current directory (`pwd`) into the runtime container as `/model`, which is why we need to specify the source of the `--api-model` as `/model/model.json`, and likewise with the output directory.
 
 In case you are running on Linux, it may happen that the generated files belong to `root`, and need to be `chown`:ed, but that's left as an exercise ;-)
+
+**Side note**: Again, if you are running docker-in-docker on Jenkins (i.e., your build slaves are already containers), the `-v` volume mapping will most probably not work as expected. Instead, you can do the following (or something equivalent):
+
+1. Put your API Model `model.json` (the description of the cluster you want to generate) in a separate directory with this `Dockerfile-generate`:
+
+```
+FROM registry.yourcompany.io/azure/acs-engine
+
+RUN mkdir -p /model
+COPY model.json /model/model.json
+
+CMD ["generate", "--api-model", "/model/model.json", "--output-directory", "/model/output"]
+```
+
+Then run the image like this (in the directory you put `Dockerfile-generate` and `model.json`):
+
+```
+docker build --pull -t anytempname .
+docker run -i --name anycontainername anytempname
+docker cp anycontainername:/model/output ./output
+```
+
+Now you will have the template files inside the `./output` directory in the current working directory. 
 
 ## Setting the environment variables
 
