@@ -67,6 +67,8 @@ build() {
     builder=$(docker run -i -t -d acs-engine bash)
     echo "INFO: copy source code to build container"
     docker cp acs-engine ${builder}:/gopath/src/github.com/Azure/
+    echo "INFO: get prereqs"
+    docker exec $builder make prereqs
     echo "INFO: build acs-engine"
     docker exec $builder make build
     echo "INFO: getting resulting artifact"
@@ -82,7 +84,7 @@ else
 fi
 
 echo "INFO: building builder image"
-docker build -t acs-engine acs-engine
+docker build --pull -t acs-engine acs-engine
 
 echo "INFO: Building acs-engine within builder image"
 target="docker/acs-engine"
@@ -94,7 +96,7 @@ fi
 
 randomId=$(od -vN "16" -An -tx1 /dev/urandom | tr -d " \n")
 
-docker build -t ${randomId} docker
+docker build --pull -t ${randomId} docker
 for tag in ${DOCKER_TAGS}; do
   echo "INFO: Tagging as ${ACS_RUNTIME_IMAGE}:${tag}."
   docker tag ${randomId} ${ACS_RUNTIME_IMAGE}:${tag}
