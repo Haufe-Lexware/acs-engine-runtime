@@ -1,3 +1,9 @@
+# Important Note
+
+This repository was created due to the lack of prebuilt binaries for `acs-engine`. As of version 0.4.0 of `acs-engine`, this has chnaged, and thus the need for this repository is no longer that pressing.
+
+You can still use it to build your own forks of `acs-engine`, or to build `HEAD` of the `master` branch, but other than that, there is no real need for this anymore.
+
 # acs-engine Runtime Docker image
 
 This little repository helps in creating a runtime docker image for the [acs-engine](https://github.com/Azure/acs-engine) command line tool, which is used for creating Azure Resource Manager configuration files and parameter files for creating various container orchestration system deployments.
